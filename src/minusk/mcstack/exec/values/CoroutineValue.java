@@ -1,6 +1,5 @@
 package minusk.mcstack.exec.values;
 
-import minusk.mcstack.exec.ByteCode;
 import minusk.mcstack.exec.Context;
 import minusk.mcstack.exec.MCStackException;
 import minusk.mcstack.exec.StackFrame;
@@ -13,7 +12,7 @@ import java.util.ArrayList;
 public class CoroutineValue extends Value {
 	public static final StringValue TYPE = new StringValue("coroutine");
 	
-	private static final ByteCode coroutineByteCode = new ByteCode(new byte[] {1}); // Tail call
+	private static final byte[] coroutineByteCode = {1}; // Tail call
 	
 	public final ArrayList<Value> stack = new ArrayList<>();
 	public final ArrayList<StackFrame> frames = new ArrayList<>();

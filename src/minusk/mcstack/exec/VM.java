@@ -8,7 +8,7 @@ import java.util.ArrayList;
  * @author MinusKelvin
  */
 public class VM {
-	private static CoroutineValue runningCoroutine;
+	private CoroutineValue runningCoroutine;
 	
 	/**
 	 * 
@@ -16,7 +16,7 @@ public class VM {
 	 * @param instructionsBeforeYield execute no more than this many instructions before yielding
 	 * @return the error 
 	 */
-	public static Value resume(CoroutineValue coroutine, long instructionsBeforeYield) {
+	public MCStackException resume(CoroutineValue coroutine, long instructionsBeforeYield) {
 		ArrayList<CoroutineValue> coroutineStack = new ArrayList<>();
 		runningCoroutine = coroutine;
 		while (runningCoroutine.child != null) {
@@ -38,7 +38,7 @@ public class VM {
 						runningCoroutine.frames.remove(runningCoroutine.frames.size() - 1);
 						// Falls through
 					case 0x02: // Call
-						frame = stackPop().toFunction().call();
+						frame = stackPop().toFunction().call(this);
 						if (frame != null)
 							runningCoroutine.frames.add(frame);
 						break;
@@ -78,6 +78,11 @@ public class VM {
 							runningCoroutine = runningCoroutine.child;
 							runningCoroutine.status = CoroutineValue.Status.RUNNING;
 						}
+						break;
+					case 0x06: // Long return
+						int layers = stackPop().toInt().getInt();
+						for (int i = 0; i < layers; i++)
+							runningCoroutine.frames.remove(runningCoroutine.frames.size() - 1);
 						break;
 					case 0x10: // Push null
 						stackPush(NullValue.INSTANCE);
@@ -155,8 +160,18 @@ public class VM {
 					case 0x34: // Declare a local variable
 						frame.context.declareLocal();
 						break;
-					case 0x40: // Add
+					case 0x35: // Table get index
 						Value rhs = stackPop();
+						TableValue table = stackPop().toTable();
+						table.get(rhs);
+						break;
+					case 0x36: // Table set index
+						rhs = stackPop();
+						table = stackPop().toTable();
+						table.set(rhs, stackPop());
+						break;
+					case 0x40: // Add
+						rhs = stackPop();
 						Value lhs = stackPop();
 						if (lhs instanceof DecimalValue || rhs instanceof DecimalValue)
 							stackPush(new DecimalValue(lhs.toDecimal().value + rhs.toDecimal().value));
@@ -207,23 +222,13 @@ public class VM {
 						else
 							stackPush(new IntegerValue(-rhs.toInt().value));
 						break;
-					case 0x47: // Table get index
-						rhs = stackPop();
-						TableValue table = stackPop().toTable();
-						table.get(rhs);
-						break;
-					case 0x48: // Table set index
-						rhs = stackPop();
-						table = stackPop().toTable();
-						table.set(rhs, stackPop());
-						break;
 					case 0x50: // Bitwise or
 						stackPush(new IntegerValue(stackPop().toInt().value | stackPop().toInt().value));
 						break;
 					case 0x51: // Bitwise and
 						stackPush(new IntegerValue(stackPop().toInt().value & stackPop().toInt().value));
 						break;
-					case 0x52: // Bitwise or
+					case 0x52: // Bitwise xor
 						stackPush(new IntegerValue(stackPop().toInt().value ^ stackPop().toInt().value));
 						break;
 					case 0x53: // Bitwise not
@@ -277,18 +282,12 @@ public class VM {
 					case 0x66: // Logical and
 						rhs = stackPop();
 						lhs = stackPop();
-						if (lhs.toBoolean().value)
-							stackPush(rhs);
-						else
-							stackPush(lhs);
+						stackPush(BooleanValue.get(lhs.toBoolean().value && rhs.toBoolean().value));
 						break;
 					case 0x67: // Logical or
 						rhs = stackPop();
 						lhs = stackPop();
-						if (lhs.toBoolean().value)
-							stackPush(lhs);
-						else
-							stackPush(rhs);
+						stackPush(BooleanValue.get(lhs.toBoolean().value || rhs.toBoolean().value));
 						break;
 					case 0x68: // Logical not
 						stackPush(BooleanValue.get(!stackPop().toBoolean().value));
@@ -299,7 +298,7 @@ public class VM {
 					case 0x71: // Conditional call (condition ifTrue 0x61)
 						FunctionValue ifTrue = stackPop().toFunction();
 						if (stackPop().toBoolean().value) {
-							frame = ifTrue.call();
+							frame = ifTrue.call(this);
 							if (frame != null)
 								runningCoroutine.frames.add(frame);
 						}
@@ -311,11 +310,11 @@ public class VM {
 						FunctionValue ifFalse = stackPop().toFunction();
 						ifTrue = stackPop().toFunction();
 						if (stackPop().toBoolean().value) {
-							frame = ifTrue.call();
+							frame = ifTrue.call(this);
 							if (frame != null)
 								runningCoroutine.frames.add(frame);
 						} else {
-							frame = ifFalse.call();
+							frame = ifFalse.call(this);
 							if (frame != null)
 								runningCoroutine.frames.add(frame);
 						}
@@ -354,7 +353,7 @@ public class VM {
 		} catch (MCStackException e) {
 			runningCoroutine.status = CoroutineValue.Status.DEAD;
 			if (coroutineStack.size() == 0)
-				return e.errorMessage;
+				return e;
 			runningCoroutine = coroutineStack.remove(coroutineStack.size()-1);
 			stackPush(e.errorMessage);
 			stackPush(BooleanValue.FALSE);
@@ -363,17 +362,17 @@ public class VM {
 		return null;
 	}
 	
-	public static void stackPush(Value value) {
+	public void stackPush(Value value) {
 		runningCoroutine.stack.add(value);
 	}
 	
-	public static Value stackPop() {
+	public Value stackPop() {
 		if (runningCoroutine.stack.size() == 0)
 			throw new MCStackException(new StringValue("stack is empty"));
 		return runningCoroutine.stack.remove(runningCoroutine.stack.size()-1);
 	}
 	
-	public static CoroutineValue getRunningCoroutine() {
+	public CoroutineValue getRunningCoroutine() {
 		return runningCoroutine;
 	}
 }

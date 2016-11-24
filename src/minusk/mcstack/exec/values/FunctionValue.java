@@ -1,9 +1,6 @@
 package minusk.mcstack.exec.values;
 
-import minusk.mcstack.exec.ByteCode;
-import minusk.mcstack.exec.Context;
-import minusk.mcstack.exec.MCStackException;
-import minusk.mcstack.exec.StackFrame;
+import minusk.mcstack.exec.*;
 
 /**
  * @author MinusKelvin
@@ -11,11 +8,11 @@ import minusk.mcstack.exec.StackFrame;
 public class FunctionValue extends Value {
 	public static final StringValue TYPE = new StringValue("function");
 	
-	private final ByteCode code;
+	private final byte[] code;
 	private final Context context;
 	private final String name;
 	
-	public FunctionValue(ByteCode code, Context context, String name) {
+	public FunctionValue(byte[] code, Context context, String name) {
 		this.code = code;
 		this.context = context;
 		this.name = name;
@@ -31,14 +28,13 @@ public class FunctionValue extends Value {
 		int l = 0;
 		for (int i = 0; i < lengthBytes; i++)
 			l |= frame.nextOpcode() << (i*8);
-		byte[] c = new byte[l];
+		code = new byte[l];
 		for (int i = 0; i < l; i++)
-			c[i] = (byte) frame.nextOpcode();
-		code = new ByteCode(c);
+			code[i] = (byte) frame.nextOpcode();
 		context = frame.context;
 	}
 	
-	public StackFrame call() {
+	public StackFrame call(VM machine) {
 		return new StackFrame(code, new Context(context), name);
 	}
 	

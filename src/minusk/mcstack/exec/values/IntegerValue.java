@@ -19,6 +19,8 @@ public class IntegerValue extends Value {
 		long v = 0;
 		for (int i = 0; i < bytes; i++)
 			v |= (long) frame.nextOpcode() << (i*8);
+		v <<= (8-bytes)*8;
+		v >>= (8-bytes)*8;
 		value = v;
 	}
 	
@@ -75,7 +77,7 @@ public class IntegerValue extends Value {
 	}
 	
 	public int getInt() {
-		if (Long.compareUnsigned(value & 0xFFFF_FFFFL, value) != 0)
+		if (Long.compareUnsigned(value & 0xFFFF_FFFFL, value) != 0 && (value >> 32) != 0xFFFF_FFFFL)
 			throw new MCStackException(new StringValue("integer out of range"));
 		return (int) value;
 	}
