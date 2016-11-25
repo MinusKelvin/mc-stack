@@ -151,11 +151,67 @@ public class Assembler {
 						// String
 						line = line.substring(1, line.length()-1);
 						// Escape escapes
-						line = line.replaceAll("\\n","\n");
-						line = line.replaceAll("\\t","\t");
-						line = line.replaceAll("\\\\","\\");
-						pushString(code, line);
-					}
+						StringBuilder builder = new StringBuilder();
+						boolean escaping = false;
+						for (int i = 0; i < line.length(); i++) {
+							if (escaping) {
+								escaping = false;
+								switch (line.charAt(i)) {
+									case 'n':
+										builder.append('\n');
+										break;
+									case 'r':
+										builder.append('\r');
+										break;
+									case '0':
+										builder.append('\0');
+										break;
+									case 't':
+										builder.append('\t');
+										break;
+									default:
+										builder.append(line.charAt(i));
+								}
+							} else if (line.charAt(i) == '\\')
+								escaping = true;
+							else
+								builder.append(line.charAt(i));
+						}
+						pushString(code, builder.toString());
+					} else if (line.matches("^'.+'$")) {
+						// Character (int)
+						line = line.substring(1, line.length()-1);
+						StringBuilder builder = new StringBuilder();
+						boolean escaping = false;
+						for (int i = 0; i < line.length(); i++) {
+							if (escaping) {
+								escaping = false;
+								switch (line.charAt(i)) {
+									case 'n':
+										builder.append('\n');
+										break;
+									case 'r':
+										builder.append('\r');
+										break;
+									case '0':
+										builder.append('\0');
+										break;
+									case 't':
+										builder.append('\t');
+										break;
+									default:
+										builder.append(line.charAt(i));
+								}
+							} else if (line.charAt(i) == '\\')
+								escaping = true;
+							else
+								builder.append(line.charAt(i));
+						}
+						if (builder.length() != 1)
+							throw new IllegalStateException("Character literal with more than one character on line "+stream.getLineNumber());
+						pushNumber(code, builder.charAt(0));
+					} else
+						throw new IllegalStateException("Could not determine what \""+line+"\" is on line "+stream.getLineNumber());
 					break;
 				case "function":
 					ArrayList<Byte> functionCode = assembleFunction(stream, indentation+1);
