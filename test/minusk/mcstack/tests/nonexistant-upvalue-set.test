@@ -1,0 +1,10 @@
+When you try to set an upvalue that does not exist, it should fail.
+%%
+fail
+undeclared local
+%%
+function set-upvalue
+	push "test"
+	push 0x10000
+	stlocal
+call

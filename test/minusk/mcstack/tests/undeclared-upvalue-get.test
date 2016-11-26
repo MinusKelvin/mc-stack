@@ -1,0 +1,10 @@
+When you try to get an upvalue that was not declared when the function was created, it should fail.
+%%
+fail
+undeclared local
+%%
+function get-upvalue
+	push 0x10000
+	ldlocal
+declare
+call

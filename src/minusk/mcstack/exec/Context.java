@@ -36,22 +36,22 @@ public class Context {
 	public Value getLocal(int var, int level) {
 		if (level == 0) {
 			if (var >= locals.size())
-				throw new MCStackException(new StringValue("tried to get local that does not exist"));
+				throw new MCStackException(new StringValue("undeclared local"));
 			return locals.get(var);
 		}
 		if (parent == null)
-			throw new MCStackException(new StringValue("tried to get local from a level above the highest level"));
+			throw new MCStackException(new StringValue("invalid upvalue level"));
 		return parent.getLocal(var, level-1);
 	}
 	
 	public void setLocal(int var, int level, Value value) {
 		if (level == 0) {
 			if (var >= locals.size())
-				throw new MCStackException(new StringValue("tried to set local that does not exist"));
+				throw new MCStackException(new StringValue("undeclared local"));
 			locals.set(var, value);
 		} else {
 			if (parent == null)
-				throw new MCStackException(new StringValue("tried to set local from a level above the highest level"));
+				throw new MCStackException(new StringValue("invalid upvalue level"));
 			parent.setLocal(var, level - 1, value);
 		}
 	}

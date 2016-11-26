@@ -1,0 +1,8 @@
+When you try to set a local that does not exist, it should fail.
+%%
+fail
+undeclared local
+%%
+push "test"
+push 0
+stlocal

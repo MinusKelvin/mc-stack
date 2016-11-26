@@ -1,6 +1,9 @@
 package minusk.mcstack.exec.values;
 
-import minusk.mcstack.exec.*;
+import minusk.mcstack.exec.Context;
+import minusk.mcstack.exec.MCStackException;
+import minusk.mcstack.exec.StackFrame;
+import minusk.mcstack.exec.VM;
 
 /**
  * @author MinusKelvin
@@ -11,14 +14,17 @@ public class FunctionValue extends Value {
 	private final byte[] code;
 	private final Context context;
 	private final String name;
+	private final NativeFunction func;
 	
 	public FunctionValue(byte[] code, Context context, String name) {
 		this.code = code;
 		this.context = context;
 		this.name = name;
+		func = null;
 	}
 	
 	public FunctionValue(StackFrame frame, int lengthBytes) {
+		func = null;
 		int nameLength = frame.nextOpcode();
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < nameLength; i++)
@@ -34,8 +40,18 @@ public class FunctionValue extends Value {
 		context = frame.context;
 	}
 	
+	public FunctionValue(NativeFunction func) {
+		code = null;
+		context = null;
+		name = null;
+		this.func = func;
+	}
+	
 	public StackFrame call(VM machine) {
-		return new StackFrame(code, new Context(context), name);
+		if (func == null)
+			return new StackFrame(code, new Context(context), name);
+		func.call(machine);
+		return null;
 	}
 	
 	@Override
@@ -81,5 +97,9 @@ public class FunctionValue extends Value {
 	@Override
 	public String toString() {
 		return "function "+name+": "+hashCode();
+	}
+	
+	public interface NativeFunction {
+		void call(VM machine);
 	}
 }

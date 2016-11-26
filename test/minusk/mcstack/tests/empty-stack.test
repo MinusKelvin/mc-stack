@@ -1,0 +1,6 @@
+When you try to pop a value off an empty stack, it should fail.
+%%
+fail
+stack is empty
+%%
+pop

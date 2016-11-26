@@ -75,6 +75,16 @@ public class Assembler {
 		return bytecode;
 	}
 	
+	public static byte[] assemble(Scanner assembly) throws IOException {
+		ArrayList<Byte> code = assembleFunction(new LineStream(assembly), 0);
+		byte[] bytecode = new byte[code.size()];
+		for (int i = 0; i < bytecode.length; i++) {
+			bytecode[i] = code.get(i);
+//			System.out.printf("0x%X%n", bytecode[i]);
+		}
+		return bytecode;
+	}
+	
 	private static ArrayList<Byte> assembleFunction(LineStream stream, int indentation) {
 		ArrayList<Byte> code = new ArrayList<>();
 		while (true) {
@@ -297,6 +307,10 @@ public class Assembler {
 		
 		public LineStream(Reader input) {
 			scanner = new Scanner(input);
+		}
+		
+		public LineStream(Scanner input) {
+			scanner = input;
 		}
 		
 		public String next() {

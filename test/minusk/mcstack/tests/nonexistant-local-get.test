@@ -1,0 +1,7 @@
+When you try to get a local that does not exist, it should fail.
+%%
+fail
+undeclared local
+%%
+push 0
+ldlocal

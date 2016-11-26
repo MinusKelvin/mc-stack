@@ -1,0 +1,9 @@
+When you try to get an upvalue that does not exist, it should fail.
+%%
+fail
+undeclared local
+%%
+function get-upvalue
+	push 0x10000
+	ldlocal
+call
